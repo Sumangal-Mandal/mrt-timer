@@ -1,9 +1,0 @@
-#duration 30
-#break 10
-#cycle 3
-push ups
-tricep dips
-shoulder taps
-diamond push ups
-plank hold
-pike push ups

@@ -1,8 +1,0 @@
-#duration 30
-#break 15
-#cycle 4
-burpees
-high knees
-jump squats
-jumping jacks
-mountain climbers
