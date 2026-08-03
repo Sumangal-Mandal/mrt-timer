@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MRT Cycle" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>MRT Cycle</title>
+</head>
+<body>
+  <!-- ========== SETUP SCREEN ========== -->
+  <main id="setup" class="screen active">
+    <header class="setup-header">
+      <h1>MRT&nbsp;Cycle</h1>
+      <p class="tagline">Metabolic Resistance Training timer</p>
+    </header>
+
+    <section class="card">
+      <label class="field-label" for="paste-link">Paste a workout link</label>
+      <div class="row">
+        <input id="paste-link" type="text" inputmode="url" autocomplete="off"
+               placeholder="https://…#w=… or a raw text link" />
+        <button id="load-link" class="btn btn-ghost" type="button">Load</button>
+      </div>
+      <p id="link-status" class="hint"></p>
+    </section>
+
+    <section class="card">
+      <label class="field-label" for="workout">Or paste / edit the workout</label>
+      <textarea id="workout" spellcheck="false" rows="12"></textarea>
+      <p class="hint">
+        Lines starting with <code>#</code> set options:
+        <code>#duration</code> (work seconds), <code>#break</code> (rest seconds),
+        <code>#cycle</code> (repeats). Every other line is an exercise.
+      </p>
+    </section>
+
+    <section id="parse-error" class="banner banner-error" hidden></section>
+
+    <section id="preview" class="card preview" hidden>
+      <div class="preview-stats">
+        <div><span id="pv-ex">0</span><small>exercises</small></div>
+        <div><span id="pv-dur">0s</span><small>work</small></div>
+        <div><span id="pv-brk">0s</span><small>break</small></div>
+        <div><span id="pv-cyc">0</span><small>cycles</small></div>
+        <div><span id="pv-total">0:00</span><small>total</small></div>
+      </div>
+    </section>
+
+    <div class="setup-actions">
+      <button id="start-btn" class="btn btn-primary" type="button">Start workout</button>
+      <button id="share-btn" class="btn btn-secondary" type="button">Share link</button>
+    </div>
+    <p class="footnote">Add to Home Screen for a full-screen, app-like experience.</p>
+  </main>
+
+  <!-- ========== TIMER SCREEN ========== -->
+  <main id="timer" class="screen timer-screen">
+    <div class="timer-top">
+      <button id="quit-btn" class="chip" type="button">✕ End</button>
+      <div class="cycle-pill">Cycle <span id="cycle-cur">1</span>/<span id="cycle-total">1</span></div>
+    </div>
+
+    <div class="phase-label" id="phase-label">GET READY</div>
+
+    <div class="ring-wrap">
+      <svg class="ring" viewBox="0 0 220 220">
+        <circle class="ring-track" cx="110" cy="110" r="100" />
+        <circle class="ring-progress" id="ring-progress" cx="110" cy="110" r="100" />
+      </svg>
+      <div class="ring-center">
+        <div class="count" id="count">0</div>
+        <div class="count-unit">sec</div>
+      </div>
+    </div>
+
+    <div class="current-exercise" id="current-exercise">—</div>
+    <div class="next-exercise">Next: <span id="next-exercise">—</span></div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <div class="timer-controls">
+      <button id="prev-btn" class="ctrl" type="button" aria-label="Previous">⏮</button>
+      <button id="pause-btn" class="ctrl ctrl-main" type="button" aria-label="Pause">⏸</button>
+      <button id="skip-btn" class="ctrl" type="button" aria-label="Skip">⏭</button>
+    </div>
+  </main>
+
+  <!-- ========== DONE SCREEN ========== -->
+  <main id="done" class="screen done-screen">
+    <div class="done-emoji">🎉</div>
+    <h2>Workout complete!</h2>
+    <p id="done-summary" class="done-summary"></p>
+    <button id="done-btn" class="btn btn-primary" type="button">Back to start</button>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
