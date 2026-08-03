@@ -535,7 +535,12 @@ document.addEventListener("visibilitychange", () => {
    INIT
    ============================================================ */
 
+const BUILD = "v4";
+
 function init() {
+  const tag = document.getElementById("build-tag");
+  if (tag) tag.textContent = "build " + BUILD;
+
   // Wire timer controls
   els.startBtn.addEventListener("click", () => { ensureAudio(); startWorkout(); });
   els.shareBtn.addEventListener("click", shareWorkout);
@@ -562,7 +567,22 @@ function init() {
   }
 
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("sw.js").catch(() => {});
+    // updateViaCache:"none" → always fetch sw.js fresh so new versions are detected.
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" })
+      .then((reg) => {
+        reg.update();
+        // Periodically check for a new version while the app is open.
+        setInterval(() => reg.update(), 60 * 1000);
+      })
+      .catch(() => {});
+
+    // When a newly installed SW takes control, reload once to load fresh assets.
+    let reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloaded) return;
+      reloaded = true;
+      window.location.reload();
+    });
   }
 }
 

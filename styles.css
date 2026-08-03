@@ -226,6 +226,8 @@ input:focus { outline: none; border-color: var(--primary); }
 .banner { border-radius: 12px; padding: 12px 14px; font-size: 14px; margin-bottom: 12px; }
 .banner-error { background: rgba(239,68,68,0.15); border: 1px solid var(--danger); color: #fecaca; }
 
+.build-tag { text-align: center; color: var(--muted); font-size: 11px; opacity: 0.55; margin: 14px 0 0; }
+
 /* --- Buttons --- */
 .btn {
   border: none; border-radius: 14px;
