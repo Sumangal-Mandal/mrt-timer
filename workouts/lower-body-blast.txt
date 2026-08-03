@@ -1,0 +1,9 @@
+#duration 40
+#break 15
+#cycle 3
+squats
+reverse lunges
+sumo squats
+lateral lunges
+glute bridges
+wall sit

@@ -1,0 +1,8 @@
+#duration 20
+#break 10
+#cycle 4
+jumping jacks
+squat taps
+high knees
+mountain climbers
+push up jacks

@@ -1,62 +1,52 @@
 "use strict";
 
 /* ============================================================
-   MRT Cycle — a shareable interval workout timer
+   MRT Cycle — playlist-based shareable interval workout timer
    ============================================================ */
-
-const DEFAULT_WORKOUT = `#duration 20
-#break 10
-#cycle 4
-jumping jacks
-squat taps
-high knees
-mountain climbers
-push up jacks`;
 
 const $ = (id) => document.getElementById(id);
 
 const els = {
-  setup: $("setup"),
-  timer: $("timer"),
-  done: $("done"),
-  workout: $("workout"),
-  pasteLink: $("paste-link"),
-  loadLink: $("load-link"),
-  linkStatus: $("link-status"),
-  parseError: $("parse-error"),
-  preview: $("preview"),
-  pvEx: $("pv-ex"),
-  pvDur: $("pv-dur"),
-  pvBrk: $("pv-brk"),
-  pvCyc: $("pv-cyc"),
-  pvTotal: $("pv-total"),
-  startBtn: $("start-btn"),
-  shareBtn: $("share-btn"),
-  quitBtn: $("quit-btn"),
-  cycleCur: $("cycle-cur"),
-  cycleTotal: $("cycle-total"),
-  phaseLabel: $("phase-label"),
-  ring: $("ring-progress"),
-  count: $("count"),
-  currentExercise: $("current-exercise"),
-  nextExercise: $("next-exercise"),
-  progressFill: $("progress-fill"),
-  prevBtn: $("prev-btn"),
-  pauseBtn: $("pause-btn"),
-  skipBtn: $("skip-btn"),
-  doneSummary: $("done-summary"),
-  doneBtn: $("done-btn"),
+  setup:          $("setup"),
+  timer:          $("timer"),
+  done:           $("done"),
+  workout:        $("workout"),          // hidden textarea – holds selected workout text
+  pasteLink:      $("paste-link"),
+  loadLink:       $("load-link"),
+  linkStatus:     $("link-status"),
+  parseError:     $("parse-error"),
+  startBtn:       $("start-btn"),
+  shareBtn:       $("share-btn"),
+  playlistEl:     $("playlist"),
+  plLoading:      $("playlist-loading"),
+  plError:        $("playlist-error"),
+  customSection:  $("custom-section"),
+  quitBtn:        $("quit-btn"),
+  cycleCur:       $("cycle-cur"),
+  cycleTotal:     $("cycle-total"),
+  phaseLabel:     $("phase-label"),
+  ring:           $("ring-progress"),
+  count:          $("count"),
+  currentExercise:$("current-exercise"),
+  nextExercise:   $("next-exercise"),
+  progressFill:   $("progress-fill"),
+  prevBtn:        $("prev-btn"),
+  pauseBtn:       $("pause-btn"),
+  skipBtn:        $("skip-btn"),
+  doneSummary:    $("done-summary"),
+  doneBtn:        $("done-btn"),
 };
 
-const RING_CIRCUMFERENCE = 2 * Math.PI * 100; // r = 100
+const RING_CIRCUMFERENCE = 2 * Math.PI * 100;
 
-/* ---------- Parsing ---------- */
+/* ============================================================
+   PARSING
+   ============================================================ */
+
 function parseWorkout(text) {
   const opts = { duration: 30, break: 15, cycle: 1 };
   const exercises = [];
-  const lines = (text || "").split(/\r?\n/);
-
-  for (const raw of lines) {
+  for (const raw of (text || "").split(/\r?\n/)) {
     const line = raw.trim();
     if (!line) continue;
     if (line.startsWith("#")) {
@@ -66,23 +56,19 @@ function parseWorkout(text) {
         const val = Number(m[2]);
         if (key === "duration" || key === "work") opts.duration = val;
         else if (key === "break" || key === "rest") opts.break = val;
-        else if (key === "cycle" || key === "cycles" || key === "rounds" || key === "round") opts.cycle = val;
+        else if (key === "cycle" || key === "cycles" || key === "round" || key === "rounds") opts.cycle = val;
       }
       continue;
     }
     exercises.push(line);
   }
-
   const errors = [];
-  if (exercises.length === 0) errors.push("Add at least one exercise line.");
-  if (!(opts.duration > 0)) errors.push("#duration must be greater than 0.");
-  if (!(opts.cycle >= 1)) errors.push("#cycle must be at least 1.");
+  if (!exercises.length) errors.push("Add at least one exercise.");
+  if (!(opts.duration > 0)) errors.push("#duration must be > 0.");
   if (opts.break < 0) errors.push("#break cannot be negative.");
-
   return { opts, exercises, errors };
 }
 
-/* Build a flat list of phases: work / rest, skipping the very last rest. */
 function buildSteps(parsed) {
   const { opts, exercises } = parsed;
   const steps = [];
@@ -101,20 +87,21 @@ function buildSteps(parsed) {
 }
 
 function totalSeconds(parsed) {
-  return buildSteps(parsed).reduce((sum, s) => sum + s.seconds, 0);
+  return buildSteps(parsed).reduce((s, x) => s + x.seconds, 0);
 }
 
-function fmtTime(total) {
-  const m = Math.floor(total / 60);
-  const s = Math.round(total % 60);
+function fmtTime(secs) {
+  const m = Math.floor(secs / 60), s = Math.round(secs % 60);
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-/* ---------- Link encoding ---------- */
+/* ============================================================
+   LINK ENCODING / DECODING
+   ============================================================ */
+
 function encodeWorkout(text) {
-  // URL-safe base64 of UTF-8 text
-  const b64 = btoa(unescape(encodeURIComponent(text)));
-  return b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return btoa(unescape(encodeURIComponent(text)))
+    .replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 function decodeWorkout(code) {
   let b64 = code.replace(/-/g, "+").replace(/_/g, "/");
@@ -122,81 +109,219 @@ function decodeWorkout(code) {
   return decodeURIComponent(escape(atob(b64)));
 }
 function buildShareUrl(text) {
-  const base = location.origin + location.pathname;
-  return `${base}#w=${encodeWorkout(text)}`;
+  return `${location.origin}${location.pathname}#w=${encodeWorkout(text)}`;
 }
 
-/* ---------- Preview / validation ---------- */
-function refreshPreview() {
-  const parsed = parseWorkout(els.workout.value);
-  if (parsed.errors.length) {
-    els.parseError.hidden = false;
-    els.parseError.textContent = parsed.errors.join(" ");
-    els.preview.hidden = true;
-    els.startBtn.disabled = true;
-    els.startBtn.style.opacity = "0.5";
-    return null;
+/* ============================================================
+   PLAYLIST RENDERING
+   ============================================================ */
+
+let selectedId = null;  // id of currently selected workout card
+
+function statsFor(parsed) {
+  const { opts, exercises } = parsed;
+  return [
+    `${exercises.length} exercises`,
+    `${opts.duration}s work`,
+    opts.break > 0 ? `${opts.break}s rest` : "no rest",
+    `${Math.round(opts.cycle)} cycle${opts.cycle > 1 ? "s" : ""}`,
+    fmtTime(totalSeconds(parsed)),
+  ];
+}
+
+function renderCard(workout) {
+  const parsed = parseWorkout(workout.text);
+  const chips = statsFor(parsed);
+
+  const card = document.createElement("div");
+  card.className = "wcard";
+  card.dataset.id = workout.id;
+
+  card.innerHTML = `
+    <div class="wcard-head">
+      <span class="wcard-emoji">${workout.emoji || "💪"}</span>
+      <div class="wcard-info">
+        <div class="wcard-name">${escHtml(workout.name)}</div>
+        <div class="wcard-meta">
+          ${chips.map(c => `<span class="wcard-chip">${escHtml(c)}</span>`).join("")}
+        </div>
+      </div>
+      <div class="wcard-check">✓</div>
+    </div>
+    <div class="wcard-body" hidden>
+      <div class="wcard-exercises">
+        ${parsed.exercises.map(e => `<span>${escHtml(e)}</span>`).join("")}
+      </div>
+    </div>`;
+
+  card.addEventListener("click", () => selectCard(workout.id, workout.text, card));
+  return card;
+}
+
+function selectCard(id, text, clickedEl) {
+  // Deselect previous
+  document.querySelectorAll(".wcard.selected").forEach(c => {
+    c.classList.remove("selected");
+    const body = c.querySelector(".wcard-body");
+    if (body) body.hidden = true;
+  });
+
+  if (selectedId === id) {
+    // Tapping same card again → deselect
+    selectedId = null;
+    els.workout.value = "";
+    setActions(false);
+    return;
   }
-  els.parseError.hidden = true;
-  els.preview.hidden = false;
-  els.startBtn.disabled = false;
-  els.startBtn.style.opacity = "1";
 
-  els.pvEx.textContent = parsed.exercises.length;
-  els.pvDur.textContent = `${parsed.opts.duration}s`;
-  els.pvBrk.textContent = `${parsed.opts.break}s`;
-  els.pvCyc.textContent = Math.round(parsed.opts.cycle);
-  els.pvTotal.textContent = fmtTime(totalSeconds(parsed));
-  return parsed;
+  selectedId = id;
+  els.workout.value = text;
+  clickedEl.classList.add("selected");
+  const body = clickedEl.querySelector(".wcard-body");
+  if (body) body.hidden = false;
+  setActions(true);
 }
 
-/* ---------- Audio cues ---------- */
-let audioCtx = null;
-function ensureAudio() {
-  if (!audioCtx) {
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if (AC) audioCtx = new AC();
+function setActions(enabled) {
+  els.startBtn.disabled = !enabled;
+  els.shareBtn.disabled = !enabled;
+}
+
+function buildPlaylist(workouts) {
+  els.plLoading.hidden = true;
+  els.playlistEl.hidden = false;
+  els.playlistEl.innerHTML = "";
+
+  for (const w of workouts) {
+    els.playlistEl.appendChild(renderCard(w));
   }
-  if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
 }
-function beep(freq = 880, duration = 0.15, volume = 0.25) {
-  if (!audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.frequency.value = freq;
-  osc.type = "sine";
-  gain.gain.setValueAtTime(volume, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + duration);
-}
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
+
+async function loadPlaylist() {
   try {
-    window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.05;
-    u.volume = 1;
-    window.speechSynthesis.speak(u);
-  } catch (_) {}
+    const res = await fetch("workouts/index.json?_=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    buildPlaylist(data.workouts || []);
+  } catch (err) {
+    els.plLoading.hidden = true;
+    els.plError.hidden = false;
+    els.plError.textContent = "Could not load workouts. Check your connection and reload.";
+  }
 }
 
-/* ---------- Timer engine ---------- */
+/* ============================================================
+   CUSTOM / PASTE LINK
+   ============================================================ */
+
+async function loadFromLink() {
+  const input = els.pasteLink.value.trim();
+  if (!input) return;
+  flashStatus(els.linkStatus, "Loading…");
+
+  let text = null;
+
+  // 1) Our own encoded share link
+  const hashMatch = input.match(/[#&]w=([^&\s]+)/);
+  if (hashMatch) {
+    try { text = decodeWorkout(hashMatch[1]); } catch (_) {}
+  }
+
+  // 2) Plain URL → try to fetch
+  if (!text && /^https?:\/\//i.test(input)) {
+    try {
+      const res = await fetch(input, { mode: "cors" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      text = await res.text();
+    } catch (_) {
+      flashStatus(els.linkStatus, "Could not fetch that link (CORS). Paste the workout text instead.", true);
+      return;
+    }
+  }
+
+  // 3) Treat input itself as raw workout text
+  if (!text) text = input;
+
+  const parsed = parseWorkout(text);
+  if (!parsed.exercises.length) {
+    flashStatus(els.linkStatus, "That doesn't look like a valid workout.", true);
+    return;
+  }
+
+  flashStatus(els.linkStatus, "Loaded ✓");
+  addCustomCard(text);
+  els.customSection.removeAttribute("open");
+}
+
+function addCustomCard(text) {
+  const workout = { id: "__custom__", name: "Custom Workout", emoji: "✨", text };
+  // Remove existing custom card if present
+  const prev = els.playlistEl.querySelector('[data-id="__custom__"]');
+  if (prev) prev.remove();
+
+  const card = renderCard(workout);
+  els.playlistEl.hidden = false;
+  els.plLoading.hidden = true;
+  els.playlistEl.insertBefore(card, els.playlistEl.firstChild);
+  // Auto-select
+  selectCard("__custom__", text, card);
+  card.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function flashStatus(el, msg, isError) {
+  el.textContent = msg;
+  el.style.color = isError ? "#fca5a5" : "#86efac";
+  clearTimeout(el._t);
+  el._t = setTimeout(() => (el.textContent = ""), 4000);
+}
+
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/* ============================================================
+   SHARE (Web Share API)
+   ============================================================ */
+
+async function shareWorkout() {
+  const text = els.workout.value.trim();
+  if (!text) return;
+  const url = buildShareUrl(text);
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "MRT Cycle workout", text: "Try this workout:", url });
+    } else {
+      await copyToClipboard(url);
+      alert("Link copied to clipboard!");
+    }
+  } catch (err) {
+    if (err?.name === "AbortError") return;
+    await copyToClipboard(url);
+  }
+}
+
+async function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    await navigator.clipboard.writeText(text);
+  } else {
+    prompt("Copy this link:", text);
+  }
+}
+
+/* ============================================================
+   TIMER ENGINE
+   ============================================================ */
+
 const engine = {
-  steps: [],
-  index: 0,
-  remaining: 0,
-  stepDuration: 0,
-  paused: false,
-  ticker: null,
-  lastTick: 0,
-  totalCycles: 1,
+  steps: [], index: 0, remaining: 0, stepDuration: 0,
+  phaseType: "", paused: false, ticker: null,
+  lastTick: 0, totalCycles: 1,
 };
 
 function showScreen(name) {
-  for (const s of [els.setup, els.timer, els.done]) s.classList.remove("active");
+  [els.setup, els.timer, els.done].forEach(s => s.classList.remove("active"));
   els[name].classList.add("active");
 }
 
@@ -206,8 +331,14 @@ function setPhaseClass(type) {
 }
 
 function startWorkout() {
-  const parsed = refreshPreview();
-  if (!parsed) return;
+  const text = els.workout.value;
+  const parsed = parseWorkout(text);
+  if (parsed.errors.length) {
+    els.parseError.hidden = false;
+    els.parseError.textContent = parsed.errors.join(" ");
+    return;
+  }
+  els.parseError.hidden = true;
   ensureAudio();
 
   engine.steps = buildSteps(parsed);
@@ -219,19 +350,16 @@ function startWorkout() {
 
   showScreen("timer");
   keepAwake();
-
-  // Short "get ready" lead-in
   runReady(3);
 }
 
 function runReady(seconds) {
   setPhaseClass("ready");
   els.phaseLabel.textContent = "Get ready";
-  els.currentExercise.textContent = engine.steps[0] ? engine.steps[0].name : "—";
+  els.currentExercise.textContent = engine.steps[0]?.name ?? "—";
   els.nextExercise.textContent = "starting…";
-  els.nextExercise.parentElement.style.visibility = "visible";
   els.cycleCur.textContent = "1";
-  speak("Get ready. " + (engine.steps[0] ? engine.steps[0].name : ""));
+  speak("Get ready. " + (engine.steps[0]?.name ?? ""));
   startPhase(seconds, "ready");
 }
 
@@ -244,10 +372,9 @@ function loadStep(i) {
     els.phaseLabel.textContent = "Work";
     els.currentExercise.textContent = step.name;
     const upcoming = engine.steps[i + 1];
-    const nextName = upcoming
+    els.nextExercise.textContent = upcoming
       ? (upcoming.type === "rest" ? (upcoming.next || "Rest") : upcoming.name)
       : "Finish";
-    els.nextExercise.textContent = nextName;
     els.cycleCur.textContent = step.cycle;
     speak(step.name);
   } else {
@@ -281,18 +408,13 @@ function tick() {
   engine.remaining -= dt;
   const after = Math.ceil(engine.remaining);
 
-  // Countdown beeps on 3,2,1
   if (after < before && after >= 1 && after <= 3) beep(660, 0.12, 0.3);
 
   if (engine.remaining <= 0) {
     beep(990, 0.3, 0.35);
     clearInterval(engine.ticker);
-    if (engine.phaseType === "ready") {
-      loadStep(0);
-    } else {
-      engine.index += 1;
-      loadStep(engine.index);
-    }
+    if (engine.phaseType === "ready") { loadStep(0); }
+    else { engine.index += 1; loadStep(engine.index); }
     return;
   }
   updateTimerUI(engine.remaining, engine.stepDuration);
@@ -304,18 +426,21 @@ function updateTimerUI(remaining, duration) {
   els.ring.style.strokeDasharray = RING_CIRCUMFERENCE;
   els.ring.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - frac)).toFixed(2);
 
-  // Overall progress across all steps
   const totalSteps = engine.steps.length || 1;
   const stepFrac = engine.stepDuration > 0 ? 1 - remaining / engine.stepDuration : 0;
-  const overall = ((engine.index + stepFrac) / totalSteps) * 100;
-  els.progressFill.style.width = `${Math.min(100, Math.max(0, overall))}%`;
+  els.progressFill.style.width =
+    `${Math.min(100, Math.max(0, (engine.index + stepFrac) / totalSteps * 100))}%`;
 }
 
 function togglePause() {
   engine.paused = !engine.paused;
   els.pauseBtn.textContent = engine.paused ? "▶" : "⏸";
-  els.phaseLabel.textContent = engine.paused ? "Paused" : (engine.phaseType === "rest" ? "Rest" : engine.phaseType === "ready" ? "Get ready" : "Work");
-  if (engine.paused) window.speechSynthesis && window.speechSynthesis.cancel();
+  els.phaseLabel.textContent = engine.paused
+    ? "Paused"
+    : engine.phaseType === "rest" ? "Rest"
+    : engine.phaseType === "ready" ? "Get ready"
+    : "Work";
+  if (engine.paused) window.speechSynthesis?.cancel();
 }
 
 function skipStep() {
@@ -328,7 +453,6 @@ function skipStep() {
 function prevStep() {
   clearInterval(engine.ticker);
   if (engine.phaseType === "ready") { startPhase(engine.stepDuration, "ready"); return; }
-  // If more than 2s into current step, restart it; otherwise go back one.
   if (engine.stepDuration - engine.remaining > 2 || engine.index === 0) {
     loadStep(engine.index);
   } else {
@@ -344,20 +468,56 @@ function finishWorkout() {
   speak("Workout complete. Great job!");
   beep(880, 0.2, 0.3);
   setTimeout(() => beep(1180, 0.35, 0.3), 180);
-  const done = engine.steps.filter((s) => s.type === "work").length;
-  els.doneSummary.textContent = `You finished ${done} exercise sets across ${engine.totalCycles} cycle${engine.totalCycles > 1 ? "s" : ""}.`;
+  const done = engine.steps.filter(s => s.type === "work").length;
+  els.doneSummary.textContent =
+    `${done} exercise sets · ${engine.totalCycles} cycle${engine.totalCycles > 1 ? "s" : ""} done.`;
   showScreen("done");
 }
 
 function quitWorkout() {
   clearInterval(engine.ticker);
   releaseWake();
-  window.speechSynthesis && window.speechSynthesis.cancel();
+  window.speechSynthesis?.cancel();
   document.body.classList.remove("phase-ready", "phase-work", "phase-rest");
   showScreen("setup");
 }
 
-/* ---------- Wake lock (keep screen on) ---------- */
+/* ============================================================
+   AUDIO
+   ============================================================ */
+
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  if (audioCtx?.state === "suspended") audioCtx.resume();
+}
+function beep(freq = 880, dur = 0.15, vol = 0.25) {
+  if (!audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.frequency.value = freq; osc.type = "sine";
+  gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+  osc.connect(gain); gain.connect(audioCtx.destination);
+  osc.start(); osc.stop(audioCtx.currentTime + dur);
+}
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.05; u.volume = 1;
+    window.speechSynthesis.speak(u);
+  } catch (_) {}
+}
+
+/* ============================================================
+   WAKE LOCK
+   ============================================================ */
+
 let wakeLock = null;
 async function keepAwake() {
   try {
@@ -371,121 +531,36 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible" && els.timer.classList.contains("active")) keepAwake();
 });
 
-/* ---------- Share ---------- */
-async function shareLink() {
-  const parsed = refreshPreview();
-  if (!parsed) return;
-  const url = buildShareUrl(els.workout.value.trim());
-  const shareData = {
-    title: "MRT Cycle workout",
-    text: "Try this workout:",
-    url,
-  };
-  try {
-    if (navigator.share) {
-      await navigator.share(shareData);
-    } else if (navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
-      flashStatus(els.linkStatus, "Link copied to clipboard ✓");
-    } else {
-      prompt("Copy this link:", url);
-    }
-  } catch (err) {
-    if (err && err.name === "AbortError") return; // user cancelled
-    try {
-      await navigator.clipboard.writeText(url);
-      flashStatus(els.linkStatus, "Link copied to clipboard ✓");
-    } catch (_) {
-      prompt("Copy this link:", url);
-    }
-  }
-}
-
-function flashStatus(el, msg, isError) {
-  el.textContent = msg;
-  el.style.color = isError ? "#fca5a5" : "#86efac";
-  clearTimeout(el._t);
-  el._t = setTimeout(() => (el.textContent = ""), 4000);
-}
-
-/* ---------- Load from a pasted link ---------- */
-async function loadFromLink() {
-  const input = els.pasteLink.value.trim();
-  if (!input) return;
-  flashStatus(els.linkStatus, "Loading…");
-
-  // 1) Our own encoded link (#w=…)
-  const hashMatch = input.match(/[#&]w=([^&\s]+)/);
-  if (hashMatch) {
-    try {
-      els.workout.value = decodeWorkout(hashMatch[1]);
-      refreshPreview();
-      flashStatus(els.linkStatus, "Workout loaded ✓");
-      return;
-    } catch (_) {
-      flashStatus(els.linkStatus, "Could not decode that link.", true);
-    }
-  }
-
-  // 2) A plain URL pointing at raw workout text — try to fetch it.
-  if (/^https?:\/\//i.test(input)) {
-    try {
-      const res = await fetch(input, { mode: "cors" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const text = await res.text();
-      const parsed = parseWorkout(text);
-      if (parsed.exercises.length === 0) throw new Error("No exercises found");
-      els.workout.value = text.trim();
-      refreshPreview();
-      flashStatus(els.linkStatus, "Workout fetched ✓");
-    } catch (err) {
-      flashStatus(els.linkStatus, "Couldn't fetch that link (it may block cross-origin requests). Paste the text instead.", true);
-    }
-    return;
-  }
-
-  // 3) Treat the pasted content as raw workout text.
-  const parsed = parseWorkout(input);
-  if (parsed.exercises.length) {
-    els.workout.value = input;
-    refreshPreview();
-    flashStatus(els.linkStatus, "Workout loaded ✓");
-  } else {
-    flashStatus(els.linkStatus, "That doesn't look like a workout link or text.", true);
-  }
-}
-
-/* ---------- Init ---------- */
-function loadFromCurrentUrl() {
-  const m = location.hash.match(/[#&]w=([^&\s]+)/);
-  if (m) {
-    try {
-      els.workout.value = decodeWorkout(m[1]);
-      return true;
-    } catch (_) {}
-  }
-  return false;
-}
+/* ============================================================
+   INIT
+   ============================================================ */
 
 function init() {
-  if (!loadFromCurrentUrl()) {
-    els.workout.value = DEFAULT_WORKOUT;
-  }
-  refreshPreview();
-
-  els.workout.addEventListener("input", refreshPreview);
-  els.startBtn.addEventListener("click", startWorkout);
-  els.shareBtn.addEventListener("click", shareLink);
+  // Wire timer controls
+  els.startBtn.addEventListener("click", () => { ensureAudio(); startWorkout(); });
+  els.shareBtn.addEventListener("click", shareWorkout);
   els.loadLink.addEventListener("click", loadFromLink);
-  els.pasteLink.addEventListener("keydown", (e) => { if (e.key === "Enter") loadFromLink(); });
-
+  els.pasteLink.addEventListener("keydown", e => { if (e.key === "Enter") loadFromLink(); });
   els.quitBtn.addEventListener("click", quitWorkout);
   els.pauseBtn.addEventListener("click", () => { ensureAudio(); togglePause(); });
   els.skipBtn.addEventListener("click", skipStep);
   els.prevBtn.addEventListener("click", prevStep);
   els.doneBtn.addEventListener("click", () => showScreen("setup"));
 
-  // Register service worker for offline / installable PWA
+  // If opened via a share link, add it as a custom card and auto-select
+  const hashMatch = location.hash.match(/[#&]w=([^&\s]+)/);
+  if (hashMatch) {
+    try {
+      const text = decodeWorkout(hashMatch[1]);
+      // Load playlist then prepend the shared card
+      loadPlaylist().then(() => addCustomCard(text));
+    } catch (_) {
+      loadPlaylist();
+    }
+  } else {
+    loadPlaylist();
+  }
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   }

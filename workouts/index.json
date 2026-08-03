@@ -1,0 +1,28 @@
+{
+  "workouts": [
+    {
+      "id": "mrt-classic",
+      "name": "MRT Classic",
+      "emoji": "🏋️",
+      "text": "#duration 20\n#break 10\n#cycle 4\njumping jacks\nsquat taps\nhigh knees\nmountain climbers\npush up jacks"
+    },
+    {
+      "id": "lower-body-blast",
+      "name": "Lower Body Blast",
+      "emoji": "🦵",
+      "text": "#duration 40\n#break 15\n#cycle 3\nsquats\nreverse lunges\nsumo squats\nlateral lunges\nglute bridges\nwall sit"
+    },
+    {
+      "id": "upper-body-pump",
+      "name": "Upper Body Pump",
+      "emoji": "💪",
+      "text": "#duration 30\n#break 10\n#cycle 3\npush ups\ntricep dips\nshoulder taps\ndiamond push ups\nplank hold\npike push ups"
+    },
+    {
+      "id": "cardio-hiit",
+      "name": "Cardio HIIT",
+      "emoji": "🔥",
+      "text": "#duration 30\n#break 15\n#cycle 4\nburpees\nhigh knees\njump squats\njumping jacks\nmountain climbers"
+    }
+  ]
+}

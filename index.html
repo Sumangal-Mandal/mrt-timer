@@ -13,50 +13,58 @@
   <title>MRT Cycle</title>
 </head>
 <body>
-  <!-- ========== SETUP SCREEN ========== -->
+
+  <!-- ========== PLAYLIST / SELECT SCREEN ========== -->
   <main id="setup" class="screen active">
     <header class="setup-header">
-      <h1>MRT&nbsp;Cycle</h1>
-      <p class="tagline">Metabolic Resistance Training timer</p>
+      <div>
+        <h1>MRT&nbsp;Cycle</h1>
+        <p class="tagline">Pick a workout</p>
+      </div>
+      <button id="share-btn" class="icon-btn" type="button" disabled aria-label="Share workout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/>
+          <polyline points="16 6 12 2 8 6"/>
+          <line x1="12" y1="2" x2="12" y2="15"/>
+        </svg>
+      </button>
     </header>
 
-    <section class="card">
-      <label class="field-label" for="paste-link">Paste a workout link</label>
-      <div class="row">
-        <input id="paste-link" type="text" inputmode="url" autocomplete="off"
-               placeholder="https://…#w=… or a raw text link" />
-        <button id="load-link" class="btn btn-ghost" type="button">Load</button>
-      </div>
-      <p id="link-status" class="hint"></p>
-    </section>
-
-    <section class="card">
-      <label class="field-label" for="workout">Or paste / edit the workout</label>
-      <textarea id="workout" spellcheck="false" rows="12"></textarea>
-      <p class="hint">
-        Lines starting with <code>#</code> set options:
-        <code>#duration</code> (work seconds), <code>#break</code> (rest seconds),
-        <code>#cycle</code> (repeats). Every other line is an exercise.
-      </p>
-    </section>
-
-    <section id="parse-error" class="banner banner-error" hidden></section>
-
-    <section id="preview" class="card preview" hidden>
-      <div class="preview-stats">
-        <div><span id="pv-ex">0</span><small>exercises</small></div>
-        <div><span id="pv-dur">0s</span><small>work</small></div>
-        <div><span id="pv-brk">0s</span><small>break</small></div>
-        <div><span id="pv-cyc">0</span><small>cycles</small></div>
-        <div><span id="pv-total">0:00</span><small>total</small></div>
-      </div>
-    </section>
-
-    <div class="setup-actions">
-      <button id="start-btn" class="btn btn-primary" type="button">Start workout</button>
-      <button id="share-btn" class="btn btn-secondary" type="button">Share link</button>
+    <!-- Loading skeletons -->
+    <div id="playlist-loading" class="pl-skeletons">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card"></div>
     </div>
-    <p class="footnote">Add to Home Screen for a full-screen, app-like experience.</p>
+
+    <!-- Error fetching workouts -->
+    <div id="playlist-error" class="banner banner-error" hidden></div>
+
+    <!-- Workout cards injected here -->
+    <div id="playlist" hidden></div>
+
+    <!-- Custom / paste link (collapsible) -->
+    <details id="custom-section" class="collapsible">
+      <summary>Use a custom workout link</summary>
+      <div class="collapsible-body">
+        <div class="row">
+          <input id="paste-link" type="text" inputmode="url" autocomplete="off"
+                 placeholder="Paste share link or workout text" />
+          <button id="load-link" class="btn btn-ghost" type="button">Load</button>
+        </div>
+        <p id="link-status" class="hint"></p>
+      </div>
+    </details>
+
+    <!-- Hidden: holds selected workout text for parser/start/share -->
+    <textarea id="workout" hidden></textarea>
+    <div id="parse-error" class="banner banner-error" hidden></div>
+
+    <!-- Sticky start button -->
+    <div class="action-bar">
+      <button id="start-btn" class="btn btn-primary" type="button" disabled>▶ Start workout</button>
+    </div>
   </main>
 
   <!-- ========== TIMER SCREEN ========== -->
@@ -96,7 +104,7 @@
     <div class="done-emoji">🎉</div>
     <h2>Workout complete!</h2>
     <p id="done-summary" class="done-summary"></p>
-    <button id="done-btn" class="btn btn-primary" type="button">Back to start</button>
+    <button id="done-btn" class="btn btn-primary" type="button">Back to workouts</button>
   </main>
 
   <script src="app.js"></script>
