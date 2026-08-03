@@ -1,5 +1,5 @@
-const CACHE = "mrt-cycle-v2";
-const SHELL = [
+const CACHE = "mrt-cycle-v3";
+const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
@@ -7,14 +7,12 @@ const SHELL = [
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
+  "./workouts/index.json",
 ];
-const WORKOUTS_MANIFEST = "./workouts/index.json";
 
 self.addEventListener("install", (e) => {
   e.waitUntil(
-    caches.open(CACHE)
-      .then(c => c.addAll([...SHELL, WORKOUTS_MANIFEST]))
-      .then(() => self.skipWaiting())
+    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
   );
 });
 
@@ -26,33 +24,21 @@ self.addEventListener("activate", (e) => {
   );
 });
 
+/* Network-first for everything: always try the network so pushed updates
+   (new code + new workouts) appear on the next load; fall back to cache
+   when offline so a workout in progress keeps working. */
 self.addEventListener("fetch", (e) => {
   const req = e.request;
   if (req.method !== "GET") return;
-
-  const url = new URL(req.url);
-
-  // workouts/index.json → network-first so new workouts appear immediately,
-  // fall back to cache when offline.
-  if (url.pathname.endsWith("workouts/index.json") || url.pathname.includes("/workouts/")) {
-    e.respondWith(
-      fetch(req)
-        .then(res => {
-          if (res.ok) {
-            caches.open(CACHE).then(c => c.put(req, res.clone())).catch(() => {});
-          }
-          return res;
-        })
-        .catch(() => caches.match(req))
-    );
-    return;
-  }
-
-  // App shell → cache-first
   e.respondWith(
-    caches.match(req).then(cached => cached || fetch(req).then(res => {
-      if (res.ok) caches.open(CACHE).then(c => c.put(req, res.clone())).catch(() => {});
-      return res;
-    }))
+    fetch(req)
+      .then(res => {
+        if (res && res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      })
+      .catch(() => caches.match(req).then(cached => cached || caches.match("./index.html")))
   );
 });
