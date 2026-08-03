@@ -23,6 +23,12 @@
       "name": "Cardio HIIT",
       "emoji": "🔥",
       "text": "#duration 30\n#break 15\n#cycle 4\nburpees\nhigh knees\njump squats\njumping jacks\nmountain climbers"
+    },
+    {
+      "id": "strength-circuit",
+      "name": "Strength Circuit",
+      "emoji": "🦾",
+      "text": "#duration 30\n#break 30\n#cycle 2\nsurrender squat\npike push ups\npop squats\nlow to high planks\nlow plank hold"
     }
   ]
 }

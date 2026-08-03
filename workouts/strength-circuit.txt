@@ -1,0 +1,8 @@
+#duration 30
+#break 30
+#cycle 2
+surrender squat
+pike push ups
+pop squats
+low to high planks
+low plank hold
