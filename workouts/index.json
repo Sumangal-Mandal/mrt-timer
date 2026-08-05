@@ -11,6 +11,12 @@
       "name": "Strength Circuit",
       "emoji": "🦾",
       "text": "#duration 30\n#break 30\n#cycle 2\nsurrender squat\npike push ups\npop squats\nlow to high planks\nlow plank hold"
+    },
+    {
+      "id": "db-power",
+      "name": "DB Power",
+      "emoji": "💥",
+      "text": "#duration 20\n#break 10\n#cycle 3\nDB thrusters\nSquat + Upright row\nDB swing\nSquat + Rev lunges\nJump Squat"
     }
   ]
 }

@@ -1,0 +1,8 @@
+#duration 20
+#break 10
+#cycle 3
+DB thrusters
+Squat + Upright row
+DB swing
+Squat + Rev lunges
+Jump Squat
