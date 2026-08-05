@@ -17,6 +17,12 @@
       "name": "DB Power",
       "emoji": "💥",
       "text": "#duration 20\n#break 10\n#cycle 3\nDB thrusters\nSquat + Upright row\nDB swing\nSquat + Rev lunges\nJump Squat"
+    },
+    {
+      "id": "core-crunch",
+      "name": "Core Crunch",
+      "emoji": "🧘",
+      "text": "#duration 20\n#break 10\n#cycle 3\nCrunches\nLeg Hug\nSlide on sides\nBicycle crunches\nToe touch"
     }
   ]
 }

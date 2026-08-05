@@ -1,0 +1,8 @@
+#duration 20
+#break 10
+#cycle 3
+Crunches
+Leg Hug
+Slide on sides
+Bicycle crunches
+Toe touch
