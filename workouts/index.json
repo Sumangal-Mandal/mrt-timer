@@ -23,6 +23,12 @@
       "name": "Core Crunch",
       "emoji": "🧘",
       "text": "#duration 20\n#break 10\n#cycle 3\nCrunches\nLeg Hug\nSlide on sides\nBicycle crunches\nToe touch"
+    },
+    {
+      "id": "core-chops",
+      "name": "Core Chops",
+      "emoji": "🔥",
+      "text": "#duration 60\n#break 20\n#cycle 2\naround the world\nkeeling pull overs\nleg out chops left\nleg out chops right\nplank pass throughs"
     }
   ]
 }

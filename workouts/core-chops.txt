@@ -1,0 +1,8 @@
+#duration 60
+#break 20
+#cycle 2
+around the world
+keeling pull overs
+leg out chops left
+leg out chops right
+plank pass throughs

@@ -535,7 +535,7 @@ document.addEventListener("visibilitychange", () => {
    INIT
    ============================================================ */
 
-const BUILD = "v6";
+const BUILD = "v7";
 
 function init() {
   const tag = document.getElementById("build-tag");
