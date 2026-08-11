@@ -1,0 +1,9 @@
+#duration 20
+#break 10
+#cycle 4
+squat thrust
+hammer curls
+back lunge press up
+bicep hold drops
+weighted knee ups
+sumo squat pulses

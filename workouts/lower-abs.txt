@@ -1,0 +1,7 @@
+#duration 20
+#break 10
+#cycle 4
+reverse crunch
+leg raises
+lying knee raises
+alternating leg raises

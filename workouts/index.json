@@ -29,6 +29,18 @@
       "name": "Core Chops",
       "emoji": "🔥",
       "text": "#duration 60\n#break 20\n#cycle 2\naround the world\nkeeling pull overs\nleg out chops left\nleg out chops right\nplank pass throughs"
+    },
+    {
+      "id": "lower-abs",
+      "name": "Lower Abs",
+      "emoji": "🔻",
+      "text": "#duration 20\n#break 10\n#cycle 4\nreverse crunch\nleg raises\nlying knee raises\nalternating leg raises"
+    },
+    {
+      "id": "strength-burn",
+      "name": "Strength Burn",
+      "emoji": "💪",
+      "text": "#duration 20\n#break 10\n#cycle 4\nsquat thrust\nhammer curls\nback lunge press up\nbicep hold drops\nweighted knee ups\nsumo squat pulses"
     }
   ]
 }
